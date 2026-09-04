@@ -19,7 +19,7 @@ typedef struct
 	TaskId next_task_id;
 } Task;
 
-Task tasks[NR_TASKS];
+Task tasks[taskid_none];
 
 typedef struct
 {
@@ -36,6 +36,12 @@ typedef struct
 } Queue;
 
 Queue queues[NR_QUEUES];
+
+void TaskInit(TaskId taskId, void (*func)(void))
+{
+	tasks[taskId].next_task_id = taskid_none;
+	tasks[taskId].function = func;
+}
 
 void QueueInit(QueueId queue_id, TaskId task_id)
 {
@@ -110,6 +116,7 @@ void TickTimerTaskStep(void)
 	if (tcpos_timer_tick_follower != tcpos_timer_tick)
 	{
 		tcpos_timer_tick_follower++;
+
 		INCREMENT_TIME_TICK;
 		for (int i = 0; i < NR_TIMERS; i++)
 			if (TIMER_DONE(timers[i].time))
@@ -124,7 +131,7 @@ void TickTimerTaskStep(void)
 void TcposInit(void)
 {
 	QueueInit(queueid_main_queue, taskid_main_queue);
-	tasks[taskid_tick_timer].function = TickTimerTaskStep;
+	TaskInit(taskid_tick_timer, TickTimerTaskStep);
 	QueueAdd(queueid_main_queue, taskid_tick_timer);
 }
 

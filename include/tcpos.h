@@ -5,8 +5,9 @@ typedef enum
     taskid_main_queue,
     taskid_tick_timer,
     // Start user task ids
+    taskid_modbus_read,
     // End user task ids
-    NR_TASKS
+    taskid_none
 }  TaskId;
 
 typedef enum
@@ -33,18 +34,15 @@ typedef enum
 
 extern uint32_t tcpos_timer_tick;
 
+extern void TaskInit(TaskId taskId, void (*func)(void));
+
 extern void QueueInit(QueueId queue_id, TaskId task_id);
 extern void QueueAdd(QueueId queue_id, TaskId task_id);
 extern bool QueueEmpty(QueueId queue_id);
 extern TaskId QueuePop(QueueId queue_id);
 
-
-
-
 extern void CriticalSectionInit(CriticalSectionId critical_section_id, QueueId queue_id);
 bool CriticalSectionEnter(CriticalSectionId critical_section_id, TaskId task_id);
-// Caller needs to exit the task when this function returns false
-
 extern void CriticalSectionLeave(CriticalSectionId critical_section_id);
 
 extern void TcposInit(void);

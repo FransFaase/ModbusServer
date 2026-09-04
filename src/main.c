@@ -12,7 +12,7 @@
 
 #include "tcpos.h"
 
-void init_timer(void);
+void InitTimer(void);
 
 void app_main(void)
 {
@@ -20,10 +20,10 @@ void app_main(void)
     TcposInit();
 
     // Init timer
-    init_timer();
+    InitTimer();
 
     // Start TinyCoPoOS on core 1
-    xTaskCreatePinnedToCore((TaskFunction_t)TcposLoop, "tcposLoop", TCPOS_MAIN_STACK_SIZE, NULL, TCPOS_MAIN_PRIO, NULL, 1);
+    xTaskCreatePinnedToCore((TaskFunction_t)TcposLoop, "TcposLoop", TCPOS_MAIN_STACK_SIZE, NULL, TCPOS_MAIN_PRIO, NULL, 1);
 
     while (1) {
     }
@@ -37,7 +37,7 @@ static bool IRAM_ATTR gptimer_cb(gptimer_handle_t timer, const gptimer_alarm_eve
     return true;
 }
 
-void init_timer(void)
+void InitTimer(void)
 {
     gptimer_handle_t gptimer = NULL;
 
