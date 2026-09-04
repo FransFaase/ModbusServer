@@ -1,5 +1,6 @@
 #include <stdbool.h>
 #include <stdint.h>
+#include <stddef.h>
 #include "tcpos.h"
 
 uint32_t tcpos_timer_tick = 0;
@@ -130,6 +131,7 @@ void TickTimerTaskStep(void)
 
 void TcposInit(void)
 {
+	TaskInit(taskid_main_queue, NULL);
 	QueueInit(queueid_main_queue, taskid_main_queue);
 	TaskInit(taskid_tick_timer, TickTimerTaskStep);
 	QueueAdd(queueid_main_queue, taskid_tick_timer);

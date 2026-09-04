@@ -6,6 +6,8 @@ typedef enum
     taskid_tick_timer,
     // Start user task ids
     taskid_modbus_read,
+    taskid_modbus_write,
+    taskid_modbus_slave,
     // End user task ids
     taskid_none
 }  TaskId;

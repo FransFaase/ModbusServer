@@ -1,4 +1,4 @@
-DataQueue modebusReadDataQueue;
+extern DataQueue modbusReadDataQueue;
+extern DataQueue modbusWriteDataQueue;
 
-void ModbusInit(void);
-void ModbusReadTaskStep(void);
+extern void ModbusInit(void);

@@ -11,6 +11,8 @@
 #define TCPOS_MAIN_PRIO 20
 
 #include "tcpos.h"
+#include "dataQueue.h"
+#include "modbus.h"
 
 void InitTimer(void);
 
@@ -21,6 +23,9 @@ void app_main(void)
 
     // Init timer
     InitTimer();
+
+    // Application specific initializations
+    ModbusInit();
 
     // Start TinyCoPoOS on core 1
     xTaskCreatePinnedToCore((TaskFunction_t)TcposLoop, "TcposLoop", TCPOS_MAIN_STACK_SIZE, NULL, TCPOS_MAIN_PRIO, NULL, 1);

@@ -1,4 +1,6 @@
 #include <stdint.h>
+#include <stdbool.h>
+#include "crc16.h"
 
 // The table for fast CRC16 calculation
 static const uint8_t crc_hi[] = {
@@ -92,6 +94,26 @@ extern void CRC16Add(uint32_t value)
     int index = crc_low_byte ^ value;
     crc_low_byte = crc_hi_byte ^ crc_hi[index];
     crc_hi_byte = crc_low[index];
+}
+
+extern bool CRC16Check(uint8_t *data, uint32_t length)
+{
+    if (length < 2)
+        return false;
+    for (int i = 0; i < length - 2; i++)
+        CRC16Add(data[i]);
+    return crc_low_byte == data[length - 2] && crc_hi_byte == data[length - 1];
+}
+
+extern void CRC16Calculate(uint8_t *data, uint32_t length)
+{
+    if (length < 2)
+        return;
+    CRC16Start();
+    for (int i = 0; i < length - 2; i++)
+        CRC16Add(data[i]);
+    data[length - 2] = crc_low_byte;
+    data[length - 1] = crc_hi_byte;
 }
 
 extern uint32_t CRC16Value(void)
