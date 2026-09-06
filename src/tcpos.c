@@ -44,34 +44,35 @@ void TaskInit(TaskId taskId, void (*func)(void))
 	tasks[taskId].function = func;
 }
 
-void QueueInit(QueueId queue_id, TaskId task_id)
+void QueueInit(QueueId queue_id)
 {
-	queues[queue_id].first_id = task_id;
-	queues[queue_id].last_id = task_id;
-	tasks[task_id].next_task_id = 0;
+	queues[queue_id].first_id = taskid_none;
+	queues[queue_id].last_id = taskid_none;
 }
 
 void QueueAdd(QueueId queue_id, TaskId task_id)
 {
-	tasks[queues[queue_id].last_id].next_task_id = task_id;
+	if (queues[queue_id].first_id == taskid_none)
+		queues[queue_id].first_id = task_id;
+	else
+		tasks[queues[queue_id].last_id].next_task_id = task_id;
 	queues[queue_id].last_id = task_id;
-	tasks[task_id].next_task_id = 0; 
 }
 
 bool QueueEmpty(QueueId queue_id)
 {
-	return queues[queue_id].first_id == queues[queue_id].last_id;
+	return queues[queue_id].first_id == taskid_none;
 }
 
 TaskId QueuePop(QueueId queue_id)
 {
-	TaskId task_id = tasks[queues[queue_id].first_id].next_task_id;
-	if (task_id != 0)
+	TaskId task_id = queues[queue_id].first_id;
+	if (task_id != taskid_none)
 	{
 		queues[queue_id].first_id = tasks[task_id].next_task_id;
-		if (queues[queue_id].first_id == 0)
-			queues[queue_id].last_id = queues[queue_id].first_id;
+		tasks[task_id].next_task_id = taskid_none;
 	}
+	
 	return task_id;
 }
 
@@ -86,14 +87,14 @@ CriticalSection criticalSections[NR_CRITICAL_SECTIONS];
 
 void CriticalSectionInit(CriticalSectionId critical_section_id, QueueId queue_id)
 {
+	QueueInit(queue_id);
 	criticalSections[critical_section_id].queue_id = queue_id;
-	criticalSections[critical_section_id].claimed_by_task_id = 0;
+	criticalSections[critical_section_id].claimed_by_task_id = taskid_none;
 }
 
 bool CriticalSectionEnter(CriticalSectionId critical_section_id, TaskId task_id)
 {
-	if (   criticalSections[critical_section_id].claimed_by_task_id != 0
-		&& criticalSections[critical_section_id].claimed_by_task_id != task_id)
+	if (criticalSections[critical_section_id].claimed_by_task_id != taskid_none)
 	{
 		QueueAdd(criticalSections[critical_section_id].queue_id, task_id);
 		return false;
@@ -107,7 +108,7 @@ void CriticalSectionLeave(CriticalSectionId critical_section_id)
 {
 	TaskId next_task_id = QueuePop(criticalSections[critical_section_id].queue_id);
 	criticalSections[critical_section_id].claimed_by_task_id = next_task_id;
-	if (next_task_id != 0)
+	if (next_task_id != taskid_none)
 		QueueAdd(queueid_main_queue, next_task_id);
 }
 
@@ -131,8 +132,7 @@ void TickTimerTaskStep(void)
 
 void TcposInit(void)
 {
-	TaskInit(taskid_main_queue, NULL);
-	QueueInit(queueid_main_queue, taskid_main_queue);
+	QueueInit(queueid_main_queue);
 	TaskInit(taskid_tick_timer, TickTimerTaskStep);
 	QueueAdd(queueid_main_queue, taskid_tick_timer);
 }
@@ -142,13 +142,34 @@ void TcposLoop(void* ptr)
 	for (;;)
 	{
 		TaskId task_id = QueuePop(queueid_main_queue);
-		if (task_id == taskid_main_queue)
+		if (task_id == taskid_none)
 			break;
 		
 		tasks[task_id].function();
 	}
 }
 
-
+#ifdef UNITY
+extern uint32_t TcposLoopN(uint32_t n)
+{
+	for (int i = 0; i < n; i++)
+	{
+		TaskId task_id = QueuePop(queueid_main_queue);
+		printf("step %d: task %d ", i, task_id);
+		if (task_id == taskid_none)
+		{
+			printf(" exit\n");
+			return i;
+		}
+		
+		if (tasks[task_id].function != 0)
+			tasks[task_id].function();
+		else
+			printf(" no function");
+		printf("\n");
+	}
+	return n;
+}
+#endif
 
 

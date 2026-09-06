@@ -28,10 +28,13 @@ extern void DataQueueDataRemoved(DataQueue *dataQueue)
     if (dataQueue->wait_write_task_id != taskid_none && dataQueue->write_length <= DataQueueRoom(dataQueue))
     {
         QueueAdd(queueid_main_queue, dataQueue->wait_write_task_id);
-        dataQueue->wait_read_task_id = taskid_none;
-        for (int i = 0; i < dataQueue->write_length; i++)
-            DataQueueWrite(dataQueue, dataQueue->write_data[i]);
-        dataQueue->write_data = NULL;
+        dataQueue->wait_write_task_id = taskid_none;
+        if (dataQueue->write_data != NULL)
+        {
+            for (int i = 0; i < dataQueue->write_length; i++)
+                DataQueueWrite(dataQueue, dataQueue->write_data[i]);
+            dataQueue->write_data = NULL;
+        }
     }
 }
 
@@ -39,9 +42,12 @@ extern bool DataQueueTryRead(DataQueue *dataQueue, uint8_t *data, uint32_t lengt
 {
     if (length <= DataQueueSize(dataQueue))
     {
-        for (int i = 0; i < length; i++)
-            data[i] = DataQueueRead(dataQueue);
-        DataQueueDataRemoved(dataQueue);
+        if (data != NULL)
+        {
+            for (int i = 0; i < length; i++)
+                data[i] = DataQueueRead(dataQueue);
+            DataQueueDataRemoved(dataQueue);
+        }
         return true;
     }
 
@@ -64,9 +70,12 @@ extern void DataQueueDataAdded(DataQueue *dataQueue)
     {
         QueueAdd(queueid_main_queue, dataQueue->wait_read_task_id);
         dataQueue->wait_read_task_id = taskid_none;
-        for (int i = 0; i < dataQueue->read_length; i++)
-            dataQueue->read_data[i] = DataQueueRead(dataQueue);
-        dataQueue->read_data = NULL;
+        if (dataQueue->read_data != NULL)
+        {
+            for (int i = 0; i < dataQueue->read_length; i++)
+                dataQueue->read_data[i] = DataQueueRead(dataQueue);
+            dataQueue->read_data = NULL;
+        }
     }
 }
 
@@ -74,9 +83,12 @@ extern bool DataQueueTryWrite(DataQueue *dataQueue, uint8_t *data, uint32_t leng
 {
     if (length <= DataQueueRoom(dataQueue))
     {
-        for (int i = 0; i < length; i++)
-            DataQueueWrite(dataQueue, data[i]);
-        DataQueueDataAdded(dataQueue);
+        if (data != NULL)
+        {
+            for (int i = 0; i < length; i++)
+                DataQueueWrite(dataQueue, data[i]);
+            DataQueueDataAdded(dataQueue);
+        }
         return true;
     }
 

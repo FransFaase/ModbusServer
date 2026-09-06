@@ -1,9 +1,15 @@
 #include <stdbool.h>
 #include <stdint.h>
+#include <stddef.h>
 #include "tcpos.h"
 #include "dataQueue.h"
 #include "modbus.h"
+#ifndef UNITY
 #include "hal/modbus.h"
+#else
+#include "mock/modbus.c"
+#endif
+#include "coroutine.h"
 
 DataQueue modbusReadDataQueue;
 DataQueue modbusWriteDataQueue;
@@ -29,12 +35,24 @@ void ModbusReadTaskStep(void)
 
 void ModbusWriteTaskStep(void)
 {
-    uint32_t count = DataQueueSize(&modbusWriteDataQueue);
-    if (count > 0 && count < ModbusTXRoom())
+    COROUTINE_BEGIN
+
+    if (!DataQueueTryRead(&modbusWriteDataQueue, NULL, 1, taskid_modbus_write))
     {
-        for (int i = 0; i < count; i++)
-            ModbusTX(DataQueueRead(&modbusWriteDataQueue));
+        COROUTINE_YIELD;
     }
+
+    uint32_t count = DataQueueSize(&modbusWriteDataQueue);
+    uint32_t room = ModbusTXRoom();
+    if (count > room)
+        count = room;
+
+    for (int i = 0; i < count; i++)
+        ModbusTX(DataQueueRead(&modbusWriteDataQueue));
+
+    COROUTINE_END
+
+    QueueAdd(queueid_main_queue, taskid_modbus_write);
 }
 
 void ModbusInit(void)

@@ -96,7 +96,7 @@ extern void CRC16Add(uint32_t value)
     crc_hi_byte = crc_low[index];
 }
 
-extern bool CRC16Check(uint8_t *data, uint32_t length)
+extern bool CRC16Check(const uint8_t *data, uint32_t length)
 {
     if (length < 2)
         return false;

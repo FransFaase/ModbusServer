@@ -1,4 +1,8 @@
+#ifndef UNITY
 #define DATA_QUEUE_SIZE 1024
+#else
+#define DATA_QUEUE_SIZE 16
+#endif
 
 typedef struct dataQueue
 {
@@ -16,12 +20,12 @@ typedef struct dataQueue
 
 extern void DataQueueInit(DataQueue *dataQueue);
 
-inline uint32_t DataQueueSize(DataQueue *dataQueue) { return dataQueue->size; }
+inline uint32_t DataQueueSize(const DataQueue *dataQueue) { return dataQueue->size; }
 extern uint8_t DataQueueRead(DataQueue *dataQueue);
 extern void DataQueueDataRemoved(DataQueue *dataQueue);
 extern bool DataQueueTryRead(DataQueue *dataQueue, uint8_t *data, uint32_t length, TaskId taskId);
 
-inline uint32_t DataQueueRoom(DataQueue *dataQueue) { return DATA_QUEUE_SIZE - dataQueue->size; }
+inline uint32_t DataQueueRoom(const DataQueue *dataQueue) { return DATA_QUEUE_SIZE - dataQueue->size; }
 extern void DataQueueWrite(DataQueue *dataQueue, uint8_t data);
 extern void DataQueueDataAdded(DataQueue *dataQueue);
 extern bool DataQueueTryWrite(DataQueue *dataQueue, uint8_t *data, uint32_t length, TaskId taskId);
