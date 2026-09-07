@@ -57,6 +57,8 @@ void ModbusWriteTaskStep(void)
 
 void ModbusInit(void)
 {
+    DataQueueInit(&modbusReadDataQueue);
+    DataQueueInit(&modbusWriteDataQueue);
     TaskInit(taskid_modbus_read, ModbusReadTaskStep);
     QueueAdd(queueid_main_queue, taskid_modbus_read);
     TaskInit(taskid_modbus_write, ModbusWriteTaskStep);

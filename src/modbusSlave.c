@@ -9,7 +9,7 @@
 
 #define NR_REGISTERS 1024
 #define FUNCTION_CODE_READ_REGISTER  3
-#define READ_REMAIING 5
+#define READ_REMAIING 6
 #define MAX_NR_READ_REGISTERS 128
 #define RESPONSE_LEN 512
 
@@ -18,7 +18,7 @@ uint32_t registers[NR_REGISTERS];
 extern void ModbusSlaveInit(void)
 {
     for (int i = 0; i < NR_REGISTERS; i++)
-        registers[i] = 0;
+        registers[i] = i;
 
     TaskInit(taskid_modbus_slave, ModbusSlaveTaskStep);
     QueueAdd(queueid_main_queue, taskid_modbus_slave);
