@@ -37,22 +37,33 @@ void ModbusWriteTaskStep(void)
 {
     COROUTINE_BEGIN
 
-    if (!DataQueueTryRead(&modbusWriteDataQueue, NULL, 1, taskid_modbus_write))
+    for (;;)
     {
-        COROUTINE_YIELD;
+        if (!DataQueueTryRead(&modbusWriteDataQueue, NULL, 1, taskid_modbus_write))
+        {
+            COROUTINE_YIELD;
+        }
+
+        uint32_t room = 0;
+        for (;;)
+        {        
+            room = ModbusTXRoom();
+            if (room > 0)
+                break;
+
+            QueueAdd(queueid_main_queue, taskid_modbus_write);
+            COROUTINE_YIELD;
+        }
+
+        uint32_t count = DataQueueSize(&modbusWriteDataQueue);
+        if (count > room)
+            count = room;
+
+        for (int i = 0; i < count; i++)
+            ModbusTX(DataQueueRead(&modbusWriteDataQueue));
     }
 
-    uint32_t count = DataQueueSize(&modbusWriteDataQueue);
-    uint32_t room = ModbusTXRoom();
-    if (count > room)
-        count = room;
-
-    for (int i = 0; i < count; i++)
-        ModbusTX(DataQueueRead(&modbusWriteDataQueue));
-
     COROUTINE_END
-
-    QueueAdd(queueid_main_queue, taskid_modbus_write);
 }
 
 void ModbusInit(void)

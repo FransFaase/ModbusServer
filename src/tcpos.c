@@ -155,18 +155,18 @@ extern uint32_t TcposLoopN(uint32_t n)
 	for (int i = 0; i < n; i++)
 	{
 		TaskId task_id = QueuePop(queueid_main_queue);
-		printf("step %d: task %d ", i, task_id);
+		//printf("step %d: task %d ", i, task_id);
 		if (task_id == taskid_none)
 		{
-			printf(" exit\n");
+			//printf(" exit\n");
 			return i;
 		}
 		
 		if (tasks[task_id].function != 0)
 			tasks[task_id].function();
-		else
-			printf(" no function");
-		printf("\n");
+		//else
+		//	printf(" no function");
+		//printf("\n");
 	}
 	return n;
 }
