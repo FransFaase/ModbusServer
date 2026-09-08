@@ -1,9 +1,10 @@
 #include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include "tcpos.h"
 #include "dataQueue.h"
 #include "modbus.h"
-#include "modbusSlave.h"
+#include "modbusClient.h"
 #include "coroutine.h"
 #include "crc16.h"
 
@@ -21,16 +22,16 @@
 
 uint32_t registers[NR_REGISTERS];
 
-extern void ModbusSlaveInit(void)
+extern void ModbusClientInit(void)
 {
     for (int i = 0; i < NR_REGISTERS; i++)
         registers[i] = i;
 
-    TaskInit(taskid_modbus_slave, ModbusSlaveTaskStep);
-    QueueAdd(queueid_main_queue, taskid_modbus_slave);
+    TaskInit(taskid_modbus_client, ModbusClientTaskStep);
+    QueueAdd(queueid_main_queue, taskid_modbus_client);
 }
 
-extern void ModbusSlaveTaskStep(void)
+extern void ModbusClientTaskStep(void)
 {
     static uint8_t response[RESPONSE_LEN];
 
@@ -40,15 +41,15 @@ extern void ModbusSlaveTaskStep(void)
     {
         CRC16Start();
 
-        static uint8_t slave_nr;
-        if (!DataQueueTryRead(&modbusReadDataQueue, &slave_nr, 1, taskid_modbus_slave))
+        static uint8_t client_nr;
+        if (!DataQueueTryRead(&modbusReadDataQueue, &client_nr, 1, taskid_modbus_client))
         {
             COROUTINE_YIELD;
         }
-        CRC16Add(slave_nr);
+        CRC16Add(client_nr);
 
         static uint8_t function_code;
-        if (!DataQueueTryRead(&modbusReadDataQueue, &function_code, 1, taskid_modbus_slave))
+        if (!DataQueueTryRead(&modbusReadDataQueue, &function_code, 1, taskid_modbus_client))
         {
             COROUTINE_YIELD;
         }
@@ -57,7 +58,7 @@ extern void ModbusSlaveTaskStep(void)
         if (function_code == FUNCTION_CODE_READ_REGISTERS)
         {
             static uint8_t remaining[READ_REGISTERS_REMAINING];
-            if (!DataQueueTryRead(&modbusReadDataQueue, remaining, READ_REGISTERS_REMAINING, taskid_modbus_slave))
+            if (!DataQueueTryRead(&modbusReadDataQueue, remaining, READ_REGISTERS_REMAINING, taskid_modbus_client))
             {
                 COROUTINE_YIELD;
             }
@@ -67,7 +68,7 @@ extern void ModbusSlaveTaskStep(void)
                 uint32_t nr = ((uint32_t)remaining[2] << 8) | remaining[3];
                 if (nr < MAX_NR_READ_REGISTERS)
                 {
-                    response[0] = slave_nr;
+                    response[0] = client_nr;
                     response[1] = FUNCTION_CODE_READ_REGISTERS;
                     response[2] = 2 * nr;
                     for (int i = 0; i < nr; i++)
@@ -76,7 +77,7 @@ extern void ModbusSlaveTaskStep(void)
                         response[4 + 2 * i] = registers[(address + i) % NR_REGISTERS] & 0xFF;
                     }
                     CRC16Calculate(response, 5 + 2 * nr);
-                    if (!DataQueueTryWrite(&modbusWriteDataQueue, response, 5 + 2 * nr, taskid_modbus_slave))
+                    if (!DataQueueTryWrite(&modbusWriteDataQueue, response, 5 + 2 * nr, taskid_modbus_client))
                     {
                         COROUTINE_YIELD;
                     }
@@ -86,7 +87,7 @@ extern void ModbusSlaveTaskStep(void)
         else if (function_code == FUNCTION_CODE_WRITE_REGISTER)
         {
             static uint8_t remaining[WRITE_REGISTER_REMAINING];
-            if (!DataQueueTryRead(&modbusReadDataQueue, remaining, WRITE_REGISTER_REMAINING, taskid_modbus_slave))
+            if (!DataQueueTryRead(&modbusReadDataQueue, remaining, WRITE_REGISTER_REMAINING, taskid_modbus_client))
             {
                 COROUTINE_YIELD;
             }
@@ -96,11 +97,11 @@ extern void ModbusSlaveTaskStep(void)
                 uint32_t data = ((uint32_t)remaining[2] << 8) | remaining[3];
                 registers[(address) % NR_REGISTERS] = data;
 
-                response[0] = slave_nr;
+                response[0] = client_nr;
                 response[1] = FUNCTION_CODE_WRITE_REGISTER;
                 for (int i = 0; i < WRITE_REGISTER_REMAINING; i++)
                     response[i + 2] = remaining[i];
-                if (!DataQueueTryWrite(&modbusWriteDataQueue, response, 2 + WRITE_REGISTER_REMAINING, taskid_modbus_slave))
+                if (!DataQueueTryWrite(&modbusWriteDataQueue, response, 2 + WRITE_REGISTER_REMAINING, taskid_modbus_client))
                 {
                     COROUTINE_YIELD;
                 }
@@ -109,13 +110,13 @@ extern void ModbusSlaveTaskStep(void)
         else if (function_code == FUNCTION_CODE_WRITE_REGISTERS)
         {
             static uint8_t info[WRITE_REGISTERS_INFO];
-            if (!DataQueueTryRead(&modbusReadDataQueue, info, WRITE_REGISTERS_INFO, taskid_modbus_slave))
+            if (!DataQueueTryRead(&modbusReadDataQueue, info, WRITE_REGISTERS_INFO, taskid_modbus_client))
             {
                 COROUTINE_YIELD;
             }
             for (int i = 0; i < WRITE_REGISTERS_INFO; i++)
                 CRC16Add(info[i]);
-            if (!DataQueueTryRead(&modbusReadDataQueue, NULL, info[4] + 2, taskid_modbus_slave))
+            if (!DataQueueTryRead(&modbusReadDataQueue, NULL, info[4] + 2, taskid_modbus_client))
             {
                 COROUTINE_YIELD;
             }
@@ -140,12 +141,12 @@ extern void ModbusSlaveTaskStep(void)
                 {
                     for (int i = 0; i < nr; i++)
                         registers[(address + i) % NR_REGISTERS] = reg_values[i];
-                    response[0] = slave_nr;
+                    response[0] = client_nr;
                     response[1] = FUNCTION_CODE_WRITE_REGISTERS;
                     for (int i = 0; i < WRITE_REGISTERS_RESP_LEN; i++)
                         response[2 + i] = info[i];
                     CRC16Calculate(response, 2 + WRITE_REGISTERS_RESP_LEN + 2);
-                    if (!DataQueueTryWrite(&modbusWriteDataQueue, response, 2 + WRITE_REGISTERS_RESP_LEN + 2, taskid_modbus_slave))
+                    if (!DataQueueTryWrite(&modbusWriteDataQueue, response, 2 + WRITE_REGISTERS_RESP_LEN + 2, taskid_modbus_client))
                     {
                         COROUTINE_YIELD;
                     }

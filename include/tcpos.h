@@ -6,7 +6,7 @@ typedef enum
     // Start user task ids
     taskid_modbus_read,
     taskid_modbus_write,
-    taskid_modbus_slave,
+    taskid_modbus_client,
     // End user task ids
     taskid_none
 }  TaskId;
