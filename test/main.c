@@ -4,7 +4,7 @@ extern void TestTinyCoPoOS(void);
 extern void TestDataQueue(void);
 extern void TestModbus(void);
 extern void TestCRC16(void);
-extern void TestModbusClient(void);
+extern void TestModbusServer(void);
 
 
 void setUp(void)
@@ -22,6 +22,6 @@ int main(int argc, char *argv[])
     RUN_TEST(TestDataQueue);
     RUN_TEST(TestModbus);
     RUN_TEST(TestCRC16);
-    RUN_TEST(TestModbusClient);
+    RUN_TEST(TestModbusServer);
     UNITY_END();
 }

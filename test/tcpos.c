@@ -31,17 +31,17 @@ extern void TestTinyCoPoOS(void)
 
     // Push three tasks
     TaskInit(taskid_modbus_write, test2TaskStep);
-    TaskInit(taskid_modbus_client, test2TaskStep);
+    TaskInit(taskid_modbus_server, test2TaskStep);
     QueueAdd(queueid_main_queue, taskid_modbus_read);
     TEST_ASSERT_FALSE(QueueEmpty(queueid_main_queue));
     QueueAdd(queueid_main_queue, taskid_modbus_write);
     TEST_ASSERT_FALSE(QueueEmpty(queueid_main_queue));
     TEST_ASSERT_EQUAL_UINT32(taskid_modbus_read, QueuePop(queueid_main_queue));
-    QueueAdd(queueid_main_queue, taskid_modbus_client);
+    QueueAdd(queueid_main_queue, taskid_modbus_server);
     TEST_ASSERT_FALSE(QueueEmpty(queueid_main_queue));
     TEST_ASSERT_EQUAL_UINT32(taskid_modbus_write, QueuePop(queueid_main_queue));
     TEST_ASSERT_FALSE(QueueEmpty(queueid_main_queue));
-    TEST_ASSERT_EQUAL_UINT32(taskid_modbus_client, QueuePop(queueid_main_queue));
+    TEST_ASSERT_EQUAL_UINT32(taskid_modbus_server, QueuePop(queueid_main_queue));
     TEST_ASSERT_TRUE(QueueEmpty(queueid_main_queue));
     TEST_ASSERT_EQUAL_UINT32(taskid_none, QueuePop(queueid_main_queue));
     TEST_ASSERT_TRUE(QueueEmpty(queueid_main_queue));
