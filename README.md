@@ -16,9 +16,17 @@ blinking and it prints some information, including the number of tasks that
 have been executed. It does print that it received one byte and as no error
 handling has been implemented yet, I fear that it will not work.
 
+## TinyCoPoOS running on Core 1
+
+The TinyCoPoOS runs on Core 1 (the second core) while ESP-IDF (based on
+FreeRTOS) runs on Core 0. The Idle Watch Dog Timer on Core 1 has been
+disabled because the function `TcposLoop` runs in an infinite loop and
+does not call any ESP-IDF function and for that reason the Idle Task is
+never executed. 
+
 ## Tasks and data queues
 
-The implementation makes use of three tasks and two data queues to implement
+The implementation makes use of six tasks and two data queues to implement
 the application specific functionality. This is maybe a bit of an overkill.
 
 There is a task (identified with `taskid_modbus_read`) reading that polls the
@@ -33,3 +41,8 @@ There is a task (identified with `taskid_modbus_write`) being activated when
 data is written to the `modbusWriteDataQueue` data queue and, if in case
 the transmit buffer is full, starts polling until is is available, and writes
 the data to the transmit buffer.
+
+There are three tasks (identified with `taskid_monitor`, `taskid_received_off`,
+and `taskid_transmitted_off`) for a monitor that sets two Booleans depending
+on whether data has been received or transmitted, stay on for a short period
+and are used for enabling the RGB led from Core 0.
