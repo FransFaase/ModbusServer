@@ -10,8 +10,11 @@ The current implementation supports the following function codes:
 - 6: Write register
 - 16: Write registers
 
-Unit-test have been implemented and the code compiles for the esp32-s3-devkitc-1
-target, but it has not been tested on this.
+Unit-test have been implemented and the code runs on a esp32-s3-devkitc-1
+target, but the Modbus functionality has not been tested. The RGB led is
+blinking and it prints some information, including the number of tasks that
+have been executed. It does print that it received one byte and as no error
+handling has been implemented yet, I fear that it will not work.
 
 ## Tasks and data queues
 

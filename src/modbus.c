@@ -4,6 +4,7 @@
 #include "tcpos.h"
 #include "dataQueue.h"
 #include "modbus.h"
+#include "modbus_stats.h"
 #ifndef UNITY
 #include "hal/modbus.h"
 #else
@@ -13,6 +14,19 @@
 
 DataQueue modbusReadDataQueue;
 DataQueue modbusWriteDataQueue;
+
+uint32_t modbusBytesReceived = 0;
+uint32_t modbusBytesTransmitted = 0;
+
+uint32_t ModbusBytesReceived(void)
+{
+    return modbusBytesReceived;
+}
+
+uint32_t ModbusBytesTransmitted(void)
+{
+    return modbusBytesTransmitted;
+}
 
 void ModbusReadTaskStep(void)
 {
@@ -26,6 +40,7 @@ void ModbusReadTaskStep(void)
         {
             for (int i = 0; i < count; i++)
                 DataQueueWrite(&modbusReadDataQueue, ModbusRX());
+            modbusBytesReceived += count;
             DataQueueDataAdded(&modbusReadDataQueue);
         }
     }
@@ -61,6 +76,7 @@ void ModbusWriteTaskStep(void)
 
         for (int i = 0; i < count; i++)
             ModbusTX(DataQueueRead(&modbusWriteDataQueue));
+        modbusBytesTransmitted += count;
     }
 
     COROUTINE_END
